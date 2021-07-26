@@ -12,6 +12,7 @@ Download the repo
 Start a new virtual environment
 
     python3 -m venv venv
+    source venv/bin/activate
 
 Download the required dependencies
 
@@ -34,11 +35,22 @@ Did it work?
     screen {Your USB location} 115200
     help()
 
-To exit (i.e. detach screen)
+To exit (i.e. detach or kill a screen)
 
-    ctrl+a ctrl+d
+    ctrl+a 
+    ctrl+d # to detach but you'd like to return
+    ctrl+k # to kill it and reinitalise next time
 
 USB location can be found with (connect/disconnect your USB device to confirm its name)
 
     ls /dev/tty.* 
+
+Want to see an LED blink?
+1. Go to the screen.
+2. Type the following
+
+    from machine import Pin
+    led = Pin(2, Pin.OUT) # this is the default LED pin location on ESP-WROOM-32. YMMV.
+    led.on()
+    led.off()
 
