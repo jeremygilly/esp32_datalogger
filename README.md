@@ -27,25 +27,30 @@ Hold down the boot/flash pin while running this from the command line. Further i
 To download Espressif's codebase:
 https://boneskull.com/micropython-on-esp32-part-1/
 
-### Useful stuff:
-    esptool.py --chip esp32 --port {Your USB location} --baud 115200 write_flash -x 0x1000 {Your saved binary location}
+*Binaries:*
+    https://micropython.org/download/esp32/
 
-Did it work?
+### Useful stuff:
+    esptool.py --chip esp32 --port {Your USB location} --baud 115200 write_flash 0x1000 {Your saved binary location}
+
+You may find -x 0x1000 required (but I have not found this to be reliable). You may also be required to press the BOOT/FLASH button during upload if it is struggling to connect.
+
+#### Did it work? Open a screen
 
     screen {Your USB location} 115200
     help()
 
-To exit (i.e. detach or kill a screen)
+#### To exit (i.e. detach or kill a screen)
 
     ctrl+a 
     ctrl+d # to detach but you'd like to return
     ctrl+k # to kill it and reinitalise next time
 
-USB location can be found with (connect/disconnect your USB device to confirm its name)
+#### USB location can be found with (connect/disconnect your USB device to confirm its name)
 
     ls /dev/tty.* 
 
-Want to see an LED blink?
+#### Want to see an LED blink?
 1. Go to the screen.
 2. Type the following
 
@@ -56,3 +61,9 @@ Want to see an LED blink?
 
 3. Detach or kill session.
 
+#### SDCard - how to install
+Check micropython/drivers/sdcard:
+upload sdcard.py (using ampy) then import sdcard
+
+#### Need to navigate the SDcard filesystem?
+    https://stackoverflow.com/questions/5137497/find-current-directory-and-files-directory
