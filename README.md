@@ -50,11 +50,8 @@ Want to see an LED blink?
 2. Type the following
 
         from machine import Pin
-
         led = Pin(2, Pin.OUT) # this is the default LED pin location on ESP-WROOM-32. YMMV.
-
         led.on()
-
         led.off()
 
 3. Detach or kill session.
