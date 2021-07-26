@@ -54,3 +54,5 @@ Want to see an LED blink?
     led.on()
     led.off()
 
+3. Detach or kill session.
+
