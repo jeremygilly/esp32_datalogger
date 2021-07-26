@@ -3,3 +3,4 @@ lessons learned.txt
 For this error:
 A fatal error occurred: Failed to connect to ESP32: Timed out waiting for packet header
 Hold down the boot/flash pin. 
+
