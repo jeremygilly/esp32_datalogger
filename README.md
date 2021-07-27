@@ -61,10 +61,6 @@ You may find -x 0x1000 required (but I have not found this to be reliable). You 
 
 3. Detach or kill session.
 
-#### SDCard - how to install
-Check micropython/drivers/sdcard:
-upload sdcard.py (using ampy) then import sdcard
-
 #### Ampy
 It's already installed for you if you used the requirements.txt file above. Use
 
@@ -82,6 +78,15 @@ For example, to install the ADS1115 library:
 To use it:
     
     import ads1x15
+
+#### SDCard - how to install
+Find locally or download sdcard.py (https://github.com/micropython/micropython/tree/master/drivers/sdcard):
+
+    ampy --port {Your USB Port name} -baud {Baud rate, mine is 115200} put {path/to/sdcard.py}
+
+Then
+
+    import sdcard
 
 #### Need to navigate the SDcard filesystem?
     https://stackoverflow.com/questions/5137497/find-current-directory-and-files-directory
