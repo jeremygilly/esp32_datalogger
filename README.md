@@ -65,5 +65,23 @@ You may find -x 0x1000 required (but I have not found this to be reliable). You 
 Check micropython/drivers/sdcard:
 upload sdcard.py (using ampy) then import sdcard
 
+#### Ampy
+It's already installed for you if you used the requirements.txt file above. Use
+
+    ampy --help
+
+For more information on how to use the program. For example, to install a new module that you got through git:
+
+    ampy --port {Your USB Port name} -baud {Baud rate, mine is 115200} put {Path/to/file}
+
+For example, to install the ADS1115 library:
+
+    git clone https://github.com/robert-hh/ads1x15.git
+    ampy --port {Your USB Port name} -baud {Baud rate, mine is 115200} put ads1x15/ads1x15.py
+
+To use it:
+    
+    import ads1x15
+
 #### Need to navigate the SDcard filesystem?
     https://stackoverflow.com/questions/5137497/find-current-directory-and-files-directory
