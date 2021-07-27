@@ -68,12 +68,12 @@ It's already installed for you if you used the requirements.txt file above. Use
 
 For more information on how to use the program. For example, to install a new module that you got through git:
 
-    ampy --port {Your USB Port name} -baud {Baud rate, mine is 115200} put {Path/to/file}
+    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {Path/to/file}
 
 For example, to install the ADS1115 library:
 
     git clone https://github.com/robert-hh/ads1x15.git
-    ampy --port {Your USB Port name} -baud {Baud rate, mine is 115200} put ads1x15/ads1x15.py
+    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put ads1x15/ads1x15.py
 
 To use it:
     
@@ -82,7 +82,7 @@ To use it:
 #### SDCard - how to install
 Find locally or download sdcard.py (https://github.com/micropython/micropython/tree/master/drivers/sdcard):
 
-    ampy --port {Your USB Port name} -baud {Baud rate, mine is 115200} put {path/to/sdcard.py}
+    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {path/to/sdcard.py}
 
 Then
 
