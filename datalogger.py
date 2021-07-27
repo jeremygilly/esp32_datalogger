@@ -9,6 +9,7 @@ Not yet implemented: WiFi removal of data.
 import os
 from machine import Pin, SoftSPI, SoftI2C, PWM
 from sdcard import SDCard
+import sys
 import ads1x15
 import time
 
@@ -37,37 +38,38 @@ def init_pwm(pin = 33, freq = 1000, duty_cycle = 512):
 
 def init_sd():
     # Initialise SD Card
-    try:
-        spisd = SoftSPI(-1, miso = Pin(13), mosi = Pin(26), sck = Pin(14))
-        sd = SDCard(spisd, Pin(27))
-        vfs = os.VfsFat(sd)
-        os.mount(vfs, '/sd') # can't mount something that's already been mounted - will trigger EPERM error
-        led_state(state = 'ok')
-        print('Successfully mounted SD card.')
-        return sd
-    except OSError as e:
-        print(e)
-        if str(e) == 'no SD card':
-            int_state  = led_state(state = str(e))
-            print(int_state)
-            time.sleep(1) # delay to prevent needless cycling
-            main() # this causes a timeout - how to keep in endless loop?
-        elif str(e) == '[Errno 1] EPERM': # it thinks it's still mounted
-            """This will also be triggered if accidentally re-mounting even if there's been no 
-            change in SD card connection. Bug?"""
-            print('Unmounting SD card.')
-            os.umount('/sd')
-            int_state  = led_state(state = 'no SD card')
-            print(int_state)
-            time.sleep(1) # delay to prevent needless cycling
-            print('Re-initialising SD...')
-            main()
-        else:
-            print(str(e))
-            int_state  = led_state(state = 'no SD card')
-            print(int_state)
-            time.sleep(1)
-            main()   
+    sd = None
+    while sd is None:
+        try:
+            spisd = SoftSPI(-1, miso = Pin(13), mosi = Pin(26), sck = Pin(14))
+            sd = SDCard(spisd, Pin(27))
+            vfs = os.VfsFat(sd)
+            os.mount(vfs, '/sd') # can't mount something that's already been mounted - will trigger EPERM error
+            led_state(state = 'ok')
+            print('Successfully mounted SD card.')
+            return sd
+        except OSError as e:
+            print(e)
+            if str(e) == 'no SD card':
+                int_state  = led_state(state = str(e))
+                print(int_state)
+                # time.sleep(2) # delay to prevent needless cycling
+            elif str(e) == '[Errno 1] EPERM': # it thinks it's still mounted
+                """This will also be triggered if accidentally re-mounting even if there's been no 
+                change in SD card connection. Bug?"""
+                print('Unmounting SD card.')
+                os.umount('/sd')
+                int_state  = led_state(state = 'no SD card')
+                print(int_state)
+                # time.sleep(2) # delay to prevent needless cycling
+                print('Re-initialising SD...')
+            else:
+                print(str(e))
+                int_state  = led_state(state = 'no SD card')
+                print(int_state)
+                # time.sleep(2)
+        except KeyboardInterrupt:
+            sys.exit()
 
 def init_adc(gain = 2):
     """Initialise the TI ADS1115 (16-bit ADC)
@@ -189,7 +191,7 @@ def unique_file(basename, ext, folder = '/'):
 
 def main():
     sd = init_sd()
-    if sd is None: main()
+    # if sd is None: main()
     int_state = led_state(state = 'ok', pins = [15, 2, 4])
     pwm = init_pwm(pin = 33, freq = 1000, duty_cycle=512)
     
