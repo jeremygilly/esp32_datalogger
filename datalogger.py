@@ -53,7 +53,7 @@ def init_sd():
             if str(e) == 'no SD card':
                 int_state  = led_state(state = str(e))
                 print(int_state)
-                # time.sleep(2) # delay to prevent needless cycling
+                time.sleep(2) # delay to prevent needless cycling
             elif str(e) == '[Errno 1] EPERM': # it thinks it's still mounted
                 """This will also be triggered if accidentally re-mounting even if there's been no 
                 change in SD card connection. Bug?"""
@@ -61,13 +61,13 @@ def init_sd():
                 os.umount('/sd')
                 int_state  = led_state(state = 'no SD card')
                 print(int_state)
-                # time.sleep(2) # delay to prevent needless cycling
+                time.sleep(2) # delay to prevent needless cycling
                 print('Re-initialising SD...')
             else:
                 print(str(e))
                 int_state  = led_state(state = 'no SD card')
                 print(int_state)
-                # time.sleep(2)
+                time.sleep(2)
         except KeyboardInterrupt:
             sys.exit()
 
@@ -191,7 +191,7 @@ def unique_file(basename, ext, folder = '/'):
 
 def main():
     sd = init_sd()
-    # if sd is None: main()
+    if sd is None: main()
     int_state = led_state(state = 'ok', pins = [15, 2, 4])
     pwm = init_pwm(pin = 33, freq = 1000, duty_cycle=512)
     
