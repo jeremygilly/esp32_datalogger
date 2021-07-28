@@ -6,8 +6,8 @@ This uses a 24-bit ADC to accept reads and saves them to an SD card. Neither WiF
 
 To use:
 
-#### Connect the wiring
-The one with 30 GPIOs: https://randomnerdtutorials.com/getting-started-with-esp32/
+## Connect the wiring
+The one with 30 GPIOs (pin out diagram): https://randomnerdtutorials.com/getting-started-with-esp32/
 
 **SD Card:**
 
@@ -64,52 +64,57 @@ The one with 30 GPIOs: https://randomnerdtutorials.com/getting-started-with-esp3
     
     D33
 
-**Software:** Download the repo
+## Software
+
+**Download the repo**
 
     git clone https://github.com/jeremygilly/esp32_datalogger
 
-Start a new virtual environment
+**Start a new virtual environment**
 
     python3 -m venv venv
     source venv/bin/activate
 
-Download the required dependencies
+**Download the required dependencies (including esptool and ampy)**
 
     pip3 install -r requirements.txt
 
-Continue...
+**Download the most recent binary (.bin). This example uses 1.16:**
 
-## Possible Errors
-**A fatal error occurred: Failed to connect to ESP32: Timed out waiting for packet header**
-Hold down the boot/flash pin while running this from the command line. Further information is here: https://randomnerdtutorials.com/solved-failed-to-connect-to-esp32-timed-out-waiting-for-packet-header/
-
-To download Espressif's codebase:
-https://boneskull.com/micropython-on-esp32-part-1/
-
-*Binaries:*
     https://micropython.org/download/esp32/
 
-### Useful stuff:
-    esptool.py --chip esp32 --port {Your USB location} --baud 115200 write_flash 0x1000 {Your saved binary location}
+**Alternatively: you can also clone it from the micropython repo on github (although it requires you to compile into .bin):**
+
+    git clone https://github.com/micropython/micropython-lib
+
+
+### Upload binary to board
+
+    esptool.py --chip esp32 --port {Your USB location} --baud 115200 write_flash 0x1000 {Your saved .bin location}
+
+*USB location can be found with (connect/disconnect your USB device to confirm its name)*
+
+    ls /dev/tty.* 
+
 
 You may find -x 0x1000 required (but I have not found this to be reliable). You may also be required to press the BOOT/FLASH button during upload if it is struggling to connect.
 
-#### Did it work? Open a screen
+**A fatal error occurred: Failed to connect to ESP32: Timed out waiting for packet header**
+Hold down the boot/flash pin while running this from the command line. Further information is here: https://randomnerdtutorials.com/solved-failed-to-connect-to-esp32-timed-out-waiting-for-packet-header/
+
+#### Did it work? Open a screen session
 
     screen {Your USB location} 115200
     help()
 
-#### To exit (i.e. detach or kill a screen)
+#### To exit (i.e. detach or kill a screen session)
 
     ctrl+a 
     ctrl+d # to detach but you'd like to return
     ctrl+k # to kill it and reinitalise next time
 
-#### USB location can be found with (connect/disconnect your USB device to confirm its name)
+### Want to see an LED blink? - A quick hello world.
 
-    ls /dev/tty.* 
-
-#### Want to see an LED blink?
 1. Go to the screen.
 2. Type the following
 
@@ -118,28 +123,28 @@ You may find -x 0x1000 required (but I have not found this to be reliable). You 
         led.on()
         led.off()
 
-3. Detach or kill session.
+3. Detach or kill session with crtl+a ctrl+k y.
 
-#### Ampy
-It's already installed for you if you used the requirements.txt file above. Use
+### Ampy - the way to upload your user-generated code
+It's already installed for you if you used the requirements.txt file above. To use:
 
     ampy --help
 
-For more information on how to use the program. For example, to install a new module that you got through git:
+**For more information on how to use the program. For example, to install a new module that you got through git:**
 
-    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {Path/to/file}
+    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {Path/to/file.py}
 
 For example, to install the ADS1115 library:
 
     git clone https://github.com/robert-hh/ads1x15.git
     ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put ads1x15/ads1x15.py
 
-To use it:
+To use the library, add to your code:
     
     import ads1x15
 
 #### SDCard - how to install
-Find locally or download sdcard.py (https://github.com/micropython/micropython/tree/master/drivers/sdcard):
+Find locally or download sdcard.py from https://github.com/micropython/micropython/tree/master/drivers/sdcard:
 
     ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {path/to/sdcard.py}
 
@@ -147,5 +152,10 @@ Then
 
     import sdcard
 
-#### Need to navigate the SDcard filesystem?
+#### Need to navigate the filesystem (incl. SD card) from the micropython REPL?
+    
     https://stackoverflow.com/questions/5137497/find-current-directory-and-files-directory
+
+**The tutorial I followed to get started:**
+
+    https://boneskull.com/micropython-on-esp32-part-1/    
