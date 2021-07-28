@@ -90,7 +90,7 @@ The one with 30 GPIOs (pin out diagram): https://randomnerdtutorials.com/getting
 
 ### Upload binary to board
 
-    esptool.py --chip esp32 --port {Your USB location} --baud 115200 write_flash 0x1000 {Your saved .bin location}
+    esptool.py --chip esp32 --port YourUSBportName --baud 115200 write_flash 0x1000 file/to/Yoursavedlocation.bin
 
 *USB location can be found with (connect/disconnect your USB device to confirm its name)*
 
@@ -104,7 +104,7 @@ Hold down the boot/flash pin while running this from the command line. Further i
 
 #### Did it work? Open a screen session
 
-    screen {Your USB location} 115200
+    screen YourUSBportName 115200
     help()
 
 #### To exit (i.e. detach or kill a screen session)
@@ -132,12 +132,12 @@ It's already installed for you if you used the requirements.txt file above. To u
 
 **For more information on how to use the program. For example, to install a new module that you got through git:**
 
-    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {Path/to/file.py}
+    ampy --port YourUSBportName --baud 115200 put Path/to/file.py
 
 For example, to install the ADS1115 library:
 
     git clone https://github.com/robert-hh/ads1x15.git
-    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put ads1x15/ads1x15.py
+    ampy --port YourUSBportName --baud 115200 put ads1x15/ads1x15.py
 
 To use the library, add to your code:
     
@@ -146,7 +146,7 @@ To use the library, add to your code:
 #### SDCard - how to install
 Find locally or download sdcard.py from https://github.com/micropython/micropython/tree/master/drivers/sdcard:
 
-    ampy --port {Your USB Port name} --baud {Baud rate, mine is 115200} put {path/to/sdcard.py}
+    ampy --port YourUSBportName --baud 115200 put path/to/sdcard.py
 
 Then
 
