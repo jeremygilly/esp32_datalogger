@@ -11,53 +11,58 @@ The one with 30 GPIOs: https://randomnerdtutorials.com/getting-started-with-esp3
 
 **SD Card:**
 
-GND - GND
+    GND - GND
 
-+3.3 - 3V3
+    +3.3 - 3V3
 
-+5 - Not connected
+    +5 - Not connected
 
-MOSI - D26
+    MOSI - D26
 
-SCK - D14
+    SCK - D14
 
-CS - D27
+    CS - D27
 
-MISO - D13
+    MISO - D13
 
-GND - GND
+    GND - GND
+
 
 **ADS1115:**
 
-VDD - 3V3
+    VDD - 3V3
 
-GND - GND
+    GND - GND
 
-SCL - D5
+    SCL - D5
 
-SDA - D18
+    SDA - D18
 
-ADDR - Not connected.
+    ADDR - Not connected.
 
-ALRT - Not connected.
+    ALRT - Not connected.
 
-A0 - Sensor +
+    A0 - Sensor +
 
-A1 - Sensor -
+    A1 - Sensor -
 
-A2 - Not connected.
+    A2 - Not connected.
 
-A3 - Not connected.
+    A3 - Not connected.
+
 
 **Status LEDs:**
 
-D15 - 100 Ohm - LED+ - GND (LED-)
+    D15 - 100 Ohm - LED+ - GND (LED-)
 
-D2 - 100 Ohm - LED+ - GND (LED-)
+    D2 - 100 Ohm - LED+ - GND (LED-)
 
-D4 - 100 Ohm - LED+ - GND (LED-)
+    D4 - 100 Ohm - LED+ - GND (LED-)
 
-**PWM:** D33
+
+**PWM:** 
+    
+    D33
 
 **Software:** Download the repo
 
