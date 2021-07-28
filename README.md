@@ -5,6 +5,39 @@ A datalogger based on the ESP32 (with WiFi and Bluetooth as standard). Built on 
 This uses a 24-bit ADC to accept reads and saves them to an SD card. Neither WiFi nor Bluetooth is implemented - but definitely doable.
 
 To use:
+
+#### Connect the wiring
+The one with 30 GPIOs:
+https://randomnerdtutorials.com/getting-started-with-esp32/
+
+**SD Card:**
+GND - GND
++3.3 - 3V3
++5 - Not connected
+MOSI - D26
+SCK - D14
+CS - D27
+MISO - D13
+GND - GND
+
+**ADS1115:**
+VDD - 3V3
+GND - GND
+SCL - D5
+SDA - D18
+ADDR - Not connected.
+ALRT - Not connected.
+A0 - Sensor +
+A1 - Sensor -
+A2 - Not connected.
+A3 - Not connected.
+
+**Status LEDs:**
+D15 - 100 Ohm - LED+ - GND (LED-)
+D2 - 100 Ohm - LED+ - GND (LED-)
+D4 - 100 Ohm - LED+ - GND (LED-)
+
+**Software**
 Download the repo
 
     git clone https://github.com/jeremygilly/esp32_datalogger
