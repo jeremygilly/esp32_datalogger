@@ -37,6 +37,9 @@ D15 - 100 Ohm - LED+ - GND (LED-)
 D2 - 100 Ohm - LED+ - GND (LED-)
 D4 - 100 Ohm - LED+ - GND (LED-)
 
+**PWM:**
+D33
+
 **Software**
 Download the repo
 
