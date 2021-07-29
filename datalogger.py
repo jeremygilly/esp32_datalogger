@@ -38,11 +38,13 @@ def init_pwm(pin = 33, freq = 1000, duty_cycle = 512):
 
 def init_sd():
     # Initialise SD Card
+    # https://www.youtube.com/watch?v=qL2g5YIVick
     sd = None
     while sd is None:
         try:
             spisd = SoftSPI(-1, miso = Pin(13), mosi = Pin(26), sck = Pin(14))
             sd = SDCard(spisd, Pin(27))
+            
             vfs = os.VfsFat(sd)
             os.mount(vfs, '/sd') # can't mount something that's already been mounted - will trigger EPERM error
             led_state(state = 'ok')
@@ -119,12 +121,12 @@ def write(data, filename = 'data.txt'):
 
 
 
-def get_voltage(ads):
+def get_voltage(ads, channel1, channel2 = None):
     """Gets the voltage and returns it."""
     if ads == None:
         ads = init_adc()
     
-    bits = ads.read(rate = 0, channel1 = 0, channel2 = 1)
+    bits = ads.read(rate = 0, channel1 = channel1, channel2 = channel2)
     voltage = ads.raw_to_v(bits)
     
     return voltage
@@ -203,28 +205,35 @@ def main():
     log_file = 'log.txt' # Not used as yet. TODO: Implement logger output for debugging.
 
     # Initialise new datataking file.
-    column_names = 'Time (s), A0-A1 (mV) \n' # 'A2-A3 (mV)'
+    column_names = 'Time (s), A0-A1 (mV), A2-A3 (mV) \n' # 'A2-A3 (mV)'
     init_write(column_names = column_names, filename = filename)
 
     # Start taking measurements.
     start_time = time.time()
     last_measurement = time.time()
-    voltages0 = []
+    voltages0, voltages1 = [], []
     while True: 
         if (time.time() - last_measurement) < 1:
-            voltage0 = get_voltage(adc)*1000 # convert to mV
+            voltage0 = get_voltage(adc, channel1 = 0, channel2 = 1)*1000 # convert to mV
             voltages0.append(voltage0) # Not great for micropython to have evergrowing lists. But it should be very short and prevent overflow.
+            voltage1 = get_voltage(adc, channel1 = 2, channel2 = 3)*1000 # convert to mV
+            voltages1.append(voltage1)
         else:
             # This could be moved to a separate thread.
             time_since_start = str(time.time() - start_time)
-            lenv0 = len(voltages0)
+            lenv0, lenv1 = len(voltages0), len(voltages1)
+            
             if lenv0 <=1: lenv0 = 1 # just in case it fails to take a reading.
+            if lenv1 <=1: lenv1 = 1
+            
             average_voltages0 = str(sum(voltages0) / lenv0)
-            data = str(time_since_start + ',' + average_voltages0 + '\n')
+            average_voltages1 = str(sum(voltages1) / lenv1)
+
+            data = str(time_since_start + ',' + average_voltages0 + ',' + average_voltages1 + '\n')
             write(data = data, filename = filename)
             print(data)
             last_measurement = time.time()
-            voltages0 = []
+            voltages0, voltages1 = [], []
 
 if __name__ == '__main__':
     """ To be implemented. Maybe in boot.py? """
