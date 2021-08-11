@@ -185,7 +185,7 @@ class ADC1261:
         self.rst.on() 
         self.pwdn.on()
 
-    def d2b(n):
+    def d2b(self, n):
         '''The decimal to binary conversion - then to string'''
         return '{0:08b}'.format(n)
     
