@@ -13,129 +13,129 @@ from machine import Pin, SoftSPI
 class ADC1261:
     # From Table 29: Register Map Summary (pg 59 of ADS1261 datasheet)
     registerAddress = dict([
-        ('ID', const(0x0)),    ('STATUS', const(0x1)),
-        ('MODE0', const(0x2)), ('MODE1', const(0x3)),
-        ('MODE2', const(0x4)), ('MODE3', const(0x5)),
-        ('REF', const(0x6)),   ('OFCAL0', const(0x7)),
-        ('OFCAL1', const(0x8)),('OFCAL2', const(0x9)),
-        ('FSCAL0', const(0xA)),('FSCAL1', const(0xB)),
-        ('FSCAL2', const(0xC)),('IMUX', const(0xD)),
-        ('IMAG', const(0xE)),  ('RESERVED', const(0xF)),
-        ('PGA', const(0x10)),  ('INPMUX', const(0x11)),
-        ('INPBIAS', const(0x12))
+        ('ID', 0x0),    ('STATUS', 0x1),
+        ('MODE0', 0x2), ('MODE1', 0x3),
+        ('MODE2', 0x4), ('MODE3', 0x5),
+        ('REF', 0x6),   ('OFCAL0', 0x7),
+        ('OFCAL1', 0x8),('OFCAL2', 0x9),
+        ('FSCAL0', 0xA),('FSCAL1', 0xB),
+        ('FSCAL2', 0xC),('IMUX', 0xD),
+        ('IMAG', 0xE),  ('RESERVED', 0xF),
+        ('PGA', 0x10),  ('INPMUX', 0x11),
+        ('INPBIAS', 0x12)
     ])
     
     # From Table 16: Command Byte Summary (pg 53) of ADS1261 data sheet.
     # Syntax: ('Mnemonic', [Byte 1, Description])
     # e.g. commandByte1['Mnemonic'][0] for Byte 1 value.
     commandByte1 = dict([
-        ('NOP', [const(0x0), "No operation. Validates the CRC response byte sequence for errors."]),
-        ('RESET', [const(0x6), "Reset all registers to default values."]),
-        ('START', [const(0x8), "Start taking measurements."]),
-        ('STOP', [const(0xA), "Stop taking measurements."]),
-        ('RDATA', [const(0x12),"Read conversion data."]),
-        ('SYOCAL', [const(0x16), "System offset calibration."]),
-        ('GANCAL', [const(0x17), "Gain calibration."]),
-        ('SFOCAL', [const(0x19), "Self offset calibration."]),
-        ('RREG', [const(0x20), "Read register data. Did you add the register to read?"]),
-        ('WREG', [const(0x40), "Write to register. Did you add the register to write to?"]),
-        ('LOCK', [const(0xF2), "Lock registers from editing."]),
-        ('UNLOCK', [const(0xF5), "Unlock registers from editing."])
+        ('NOP', [0x0, "No operation. Validates the CRC response byte sequence for errors."]),
+        ('RESET', [0x6, "Reset all registers to default values."]),
+        ('START', [0x8, "Start taking measurements."]),
+        ('STOP', [0xA, "Stop taking measurements."]),
+        ('RDATA', [0x12,"Read conversion data."]),
+        ('SYOCAL', [0x16, "System offset calibration."]),
+        ('GANCAL', [0x17, "Gain calibration."]),
+        ('SFOCAL', [0x19, "Self offset calibration."]),
+        ('RREG', [0x20, "Read register data. Did you add the register to read?"]),
+        ('WREG', [0x40, "Write to register. Did you add the register to write to?"]),
+        ('LOCK', [0xF2, "Lock registers from editing."]),
+        ('UNLOCK', [0xF5, "Unlock registers from editing."])
     ])
     
     INPMUXregister = dict([
     # Check Table 43 in ADS1261 data sheet
         ('AINCOM', int('0000',2)),
-        ('AIN0', const(int('0001',2))),
-        ('AIN1', const(int('0010',2))),
-        ('AIN2', const(int('0011',2))),
-        ('AIN3', const(int('0100',2))),
-        ('AIN4', const(int('0101',2))),
-        ('AIN5', const(int('0110',2))),
-        ('AIN6', const(int('0111',2))),
-        ('AIN7', const(int('1000',2))),
-        ('AIN8', const(int('1001',2))),
-        ('AIN9', const(int('1010',2))),
-        ('INTEMPSENSE', const(int('1011',2))), # Internal temperature sensor [positive or negative depending on field]
-        ('INTAV4', const(int('1100',2))), # Internal (AVDD - AVSS)/4 [positive or negative depending on field]
-        ('INTDV4', const(int('1101',2))), # Internal (DVDD/4) [positive or negative depending on field]
-        ('ALLOPEN', const(int('1110',2))), # All inputs open
-        ('VCOM', const(int('1111',2))) # Internal connection to V common
+        ('AIN0', int('0001',2)),
+        ('AIN1', int('0010',2)),
+        ('AIN2', int('0011',2)),
+        ('AIN3', int('0100',2)),
+        ('AIN4', int('0101',2)),
+        ('AIN5', int('0110',2)),
+        ('AIN6', int('0111',2)),
+        ('AIN7', int('1000',2)),
+        ('AIN8', int('1001',2)),
+        ('AIN9', int('1010',2)),
+        ('INTEMPSENSE', int('1011',2)), # Internal temperature sensor [positive or negative depending on field]
+        ('INTAV4', int('1100',2)), # Internal (AVDD - AVSS)/4 [positive or negative depending on field]
+        ('INTDV4', int('1101',2)), # Internal (DVDD/4) [positive or negative depending on field]
+        ('ALLOPEN', int('1110',2)), # All inputs open
+        ('VCOM', int('1111',2)) # Internal connection to V common
     ])
     
     available_data_rates = dict([
         # Check Table 32 - ADS1261 data sheet. All values are floats in SPS.
-        (float(2.5), const(int('00000',2))),
-        (5, const(int('00001',2))),
-        (10, const(int('00010',2))),
-        (float(16.6), const(int('00011',2))),
-        (20, const(int('00100',2))),
-        (50, const(int('00101',2))),
-        (60, const(int('00110',2))),
-        (100, const(int('00111',2))),
-        (400, const(int('01000',2))),
-        (1200, const(int('01001',2))),
-        (2400, const(int('01010',2))),
-        (4800, const(int('01011',2))), 
-        (7200, const(int('01100',2))), 
-        (14400, const(int('01101',2))),
-        (19200, const(int('01110',2))),
-        (25600, const(int('01111',2))),
-        (40000, const(int('10000',2)))
+        (float(2.5), int('00000',2)),
+        (5, int('00001',2)),
+        (10, int('00010',2)),
+        (float(16.6), int('00011',2)),
+        (20, int('00100',2)),
+        (50, int('00101',2)),
+        (60, int('00110',2)),
+        (100, int('00111',2)),
+        (400, int('01000',2)),
+        (1200, int('01001',2)),
+        (2400, int('01010',2)),
+        (4800, int('01011',2)), 
+        (7200, int('01100',2)), 
+        (14400, int('01101',2)),
+        (19200, int('01110',2)),
+        (25600, int('01111',2)),
+        (40000, int('10000',2))
     ])
         
     available_digital_filters = dict([
         # Check Table 32 - ADS1261 data sheet. sinc4 has the greatest noise attenuation and greatest time constant.
-        ('sinc1', const(int('000',2))),
-        ('sinc2', const(int('001',2))),
-        ('sinc3', const(int('010',2))),
-        ('sinc4', const(int('011',2))),
-        ('fir', const(int('100',2))),
+        ('sinc1', int('000',2)),
+        ('sinc2', int('001',2)),
+        ('sinc3', int('010',2)),
+        ('sinc4', int('011',2)),
+        ('fir', int('100',2)),
     ])
     
     available_gain = dict([
-        (1, const(int('000',2))),
-        (2, const(int('001',2))),
-        (4, const(int('010',2))),
-        (8, const(int('011',2))),
-        (16, const(int('100',2))),
-        (32, const(int('101',2))),
-        (64, const(int('110',2))),
-        (128, const(int('111',2)))
+        (1, int('000',2)),
+        (2, int('001',2)),
+        (4, int('010',2)),
+        (8, int('011',2)),
+        (16, int('100',2)),
+        (32, int('101',2)),
+        (64, int('110',2)),
+        (128, int('111',2))
     ])
     
     available_reference = dict([
-        ('Internal Positive', const(int('00',2)<<2)),
-        ('AVDD', const(int('01',2)<<2)),
-        ('AIN0', const(int('10',2)<<2)),
-        ('AIN2', const(int('11',2)<<2)),
-        ('Internal Negative', const(int('00',2))),
-        ('AVSS', const(int('01',2))),
-        ('AIN1', const(int('10',2))),
-        ('AIN3', const(int('11',2))),
+        ('Internal Positive', int('00',2)<<2),
+        ('AVDD', int('01',2)<<2),
+        ('AIN0', int('10',2)<<2),
+        ('AIN2', int('11',2)<<2),
+        ('Internal Negative', int('00',2)),
+        ('AVSS', int('01',2)),
+        ('AIN1', int('10',2)),
+        ('AIN3', int('11',2)),
     ])
     
     mode1register = dict({
-        ('normal', const(int('00',2)<<5)),
-        ('chop', const(int('01',2)<<5)),
-        ('2-wire ac-excitation', const(int('10',2)<<5)),
-        ('4-wire ac-excitation', const(int('11',2)<<5)),
-        ('continuous', const(int('0',2)<<4)),
-        ('pulse', const(int('1',2)<<4)),
-        ('0us', const(int('0000',2))),
-        ('50us', const(int('0001',2))),
-        ('59us', const(int('0010',2))),
-        ('67us', const(int('0011',2))),
-        ('85us', const(int('0100',2))),
-        ('119us', const(int('0101',2))),
-        ('189us', const(int('0110',2))),
-        ('328us', const(int('0111',2))),
-        ('605us', const(int('1000',2))),
-        ('1.16ms', const(int('1001',2))),
-        ('2.27ms', const(int('1010',2))),
-        ('4.49ms', const(int('1011',2))),
-        ('8.93ms', const(int('1100',2))),
-        ('17.8ms', const(int('1101',2)))
+        ('normal', int('00',2)<<5),
+        ('chop', int('01',2)<<5),
+        ('2-wire ac-excitation', int('10',2)<<5),
+        ('4-wire ac-excitation', int('11',2)<<5),
+        ('continuous', int('0',2)<<4),
+        ('pulse', int('1',2)<<4),
+        ('0us', int('0000',2)),
+        ('50us', int('0001',2)),
+        ('59us', int('0010',2)),
+        ('67us', int('0011',2)),
+        ('85us', int('0100',2)),
+        ('119us', int('0101',2)),
+        ('189us', int('0110',2)),
+        ('328us', int('0111',2)),
+        ('605us', int('1000',2)),
+        ('1.16ms', int('1001',2)),
+        ('2.27ms', int('1010',2)),
+        ('4.49ms', int('1011',2)),
+        ('8.93ms', int('1100',2)),
+        ('17.8ms', int('1101',2))
     })
     
     inv_registerAddress = {v: k for k, v in registerAddress.items()}
