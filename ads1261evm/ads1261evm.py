@@ -238,7 +238,7 @@ class ADC1261:
             if read == -1:
                 print("Read back failed. Requires write_register review.")
                 print(read, hex_message)
-            elif read == int(register_data,2):
+            elif read == register_data:
                 pass
             elif register_location.upper() == 'STATUS':
                 pass
