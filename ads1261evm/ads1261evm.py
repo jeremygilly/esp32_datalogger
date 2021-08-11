@@ -184,6 +184,10 @@ class ADC1261:
         # Required for the ADS1261
         self.rst.on() 
         self.pwdn.on()
+
+    def d2b(n):
+        '''The decimal to binary conversion - then to string'''
+        return '{0:08b}'.format(n)
     
     def send(self, hex_message, human_message="None provided"):
         try:
@@ -222,7 +226,7 @@ class ADC1261:
         register_location = register_location.upper()
         # expects to see register_data as a binary string
         if not isinstance(register_data, str):
-            register_data = register_data.replace('08b', '')
+            register_data = self.d2b(register_data)
         
         hex_message = [self.commandByte1['WREG'][0]+self.registerAddress[register_location],int(register_data,2),0,0,0]
         
@@ -250,24 +254,24 @@ class ADC1261:
 
     def choose_inputs(self, positive, negative = 'VCOM'):
         input_pins = int(self.INPMUXregister[positive]<<4)+self.INPMUXregister[negative]
-        self.write_register('INPMUX', input_pins.replace('08b', ''))
+        self.write_register('INPMUX', self.d2b(input_pins))
 #        self.check_inputs()
     
     def check_inputs(self):
         read = self.read_register('INPMUX')
-        print("Input polarity check --- Positive side:", self.inv_INPMUXregister[int(read.replace('08b', '')[:4],2)], "- Negative side:", self.inv_INPMUXregister[int(read.replace('08b', '')[4:],2)])
+        print("Input polarity check --- Positive side:", self.inv_INPMUXregister[int(self.d2b(read)[:4],2)], "- Negative side:", self.inv_INPMUXregister[int(self.d2b(read)[4:],2)])
     
     def set_frequency(self, data_rate = 20, digital_filter = 'FIR', print_freq=True):
         data_rate = float(data_rate) # just to ensure we remove any other data types (e.g. strings)
         digital_filter = digital_filter.lower() # to ensure dictionary matching
         rate_filter = int(self.available_data_rates[data_rate]<<3)+int(self.available_digital_filters[digital_filter])
-        self.write_register('MODE0', rate_filter.replace('08b', ''))
+        self.write_register('MODE0', self.d2b(rate_filter))
         return self.check_frequency(print_freq=print_freq)
         
     def check_frequency(self, print_freq=True):
         read = self.read_register('MODE0')
-        data_rate = self.inv_available_data_rates[int(read.replace('08b', '')[:5],2)]
-        digital_filter = self.inv_available_digital_filters[int(read.replace('08b', '')[5:],2)]
+        data_rate = self.inv_available_data_rates[int(self.d2b(read)[:5],2)]
+        digital_filter = self.inv_available_digital_filters[int(self.d2b(read)[5:],2)]
         if (print_freq==True): 
             print("Data rate and digital filter --- Data rate:", data_rate, 
             "SPS - Digital Filter:", digital_filter)
@@ -297,12 +301,12 @@ class ADC1261:
         send_status = 0
         CRCERR = CRCERR<<6
         send_status = send_status + CRCERR + RESET
-        self.write_register('STATUS', send_status.replace('08b', ''))
+        self.write_register('STATUS', self.d2b(send_status))
         return self.check_status()
         
     def check_status(self):
         read = self.read_register('STATUS')
-        byte_string = list(map(int,read.replace('08b', '')))
+        byte_string = list(map(int,self.d2b(read)))
         LOCK_status, CRCERR_status, PGAL_ALM_status, PGAH_ALM_status, REFL_ALM_status, DRDY_status, CLOCK_status, RESET_status = byte_string
         return LOCK_status, CRCERR_status, PGAL_ALM_status, PGAH_ALM_status, REFL_ALM_status, DRDY_status, CLOCK_status, RESET_status
  
@@ -312,13 +316,13 @@ class ADC1261:
         # DELAY = '0us', '50us', '59us', '67us', '85us', '119us','189us', '328us','605us','1.16ms','2.27ms','4.49ms','8.93ms', or '17.8ms'
         [CHOP, CONVRT, DELAY] = [CHOP.lower(), CONVRT.lower(), DELAY.lower()] # formatting
         send_mode1 = self.mode1register[CHOP]+self.mode1register[CONVRT]+self.mode1register[DELAY]
-        send_mode1 = send_mode1.replace('08b', '')
+        send_mode1 = self.d2b(send_mode1)
         self.write_register('MODE1', send_mode1)
         return self.check_mode1()
         
     def check_mode1(self):
         read = self.read_register('MODE1')
-        byte_string = list(map(int,read.replace('08b', '')))
+        byte_string = list(map(int,self.d2b(read)))
         chop_bits = int(''.join(map(str,byte_string[1:3])),2) << 5
         convrt_bits = int(str(byte_string[3]),2) << 4
         CHOP = 'normal' if chop_bits == 0 else self.inv_mode1register[chop_bits]
@@ -343,7 +347,7 @@ class ADC1261:
     def check_mode3(self):
         read = self.read_register('MODE3')
         try:
-            byte_string = list(map(int,read.replace('08b', '')))
+            byte_string = list(map(int,self.d2b(read)))
             PWDN_status, STATENB_status, CRCENB_status, SPITIM_status, GPIO3_status, GPIO2_status, GPIO1_status, GPIO0_status = byte_string
             return PWDN_status, STATENB_status, CRCENB_status, SPITIM_status, GPIO3_status, GPIO2_status, GPIO1_status, GPIO0_status
         except Exception as e:
@@ -353,13 +357,13 @@ class ADC1261:
     def PGA(self, BYPASS = 0, GAIN = 1):
         # BYPASS can be 0 (PGA mode (default)) or 1 (PGA  bypass).
         send_PGA = int(BYPASS<<7)+int(self.available_gain[GAIN])
-        send_PGA = send_PGA.replace('08b', '')
+        send_PGA = self.d2b(send_PGA)
         self.write_register('PGA', send_PGA)
         return self.check_PGA()
         
     def check_PGA(self):
         read = self.read_register('PGA')
-        byte_string = list(map(int,read.replace('08b', '')))
+        byte_string = list(map(int,self.d2b(read)))
         BYPASS_status = 0 if byte_string[0] == 0 else 1
         gain = self.inv_available_gain[int(''.join(map(str,byte_string[5:])),2)]
         return BYPASS_status, gain
@@ -370,13 +374,13 @@ class ADC1261:
         # RMUXP is the reference positive side, can be "Internal Positive", "AVDD", "AIN0", or "AIN2"
         # RMUXN is the reference negative side, can be "Internal Negative", "AVSS", "AIN1", or "AIN3"
         send_ref_config = int(reference_enable<<4) + self.available_reference[RMUXP] + self.available_reference[RMUXN]
-        send_ref_config = send_ref_config.replace('08b', '')
+        send_ref_config = self.d2b(send_ref_config)
         self.write_register('REF', send_ref_config)
         return self.check_reference_config()
         
     def check_reference_config(self):
         read = self.read_register('REF')
-        byte_string = list(map(int,read.replace('08b', '')))
+        byte_string = list(map(int,self.d2b(read)))
         ref_enable_status = 0 if byte_string[3] == 0 else 1
         RMUXP_status = self.inv_available_reference[int(''.join(map(str,byte_string[4:6])),2)<<2]
         RMUXN_status = self.inv_available_reference[int(''.join(map(str,byte_string[6:])),2)]
@@ -454,7 +458,7 @@ class ADC1261:
                         #~ print(read) # remember to remove this!
                         if status != 'disabled' and crc == 'disabled':
                             #~ print("Status enabled, CRC-2 disabled")
-                            status_byte = read[2].replace('08b', '')
+                            status_byte = self.d2b(read[2])
                             #~ print("Status byte (low & high):", status_byte[2], status_byte[3], status_byte)
                             if status_byte[2] == 1 or status_byte[3] == 1 or read[3:6] == [127,255,255] or read[3:6] == [128,0,0]:
                                 print("Error. PGA Alarm.", self.check_status())
