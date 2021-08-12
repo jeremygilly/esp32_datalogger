@@ -10,28 +10,33 @@ import os
 from machine import Pin, SoftSPI, SoftI2C, PWM
 from sdcard import SDCard
 import sys
-import ads1x15
+import ads1261evm
 import time
+import utime
 
 class Logger:
     DEBUG = 10
+    
     def isEnabledFor(self, _):
         return False
+    
     def debug(self, msg, *args):
         pass
+    
     def getLogger(self, name):
         return Logger()
 
-def init_pwm(pin = 33, freq = 1000, duty_cycle = 512):
+
+def init_pwm(pin=33, freq=1000, duty_cycle=512):
     # Run Square Wave Generator
     try:
         pwm = PWM(Pin(pin))
         pwm.freq(freq) # in Hz - really accurate as measured on oscilloscope!
         pwm.duty(duty_cycle) # max = 1023 = 100%
-        led_state(state = 'ok')
+        led_state(state='ok')
         return pwm
-    except Exception as e:
-        led_state(state = 'pwm')
+    except Exception:
+        led_state(state='pwm')
         time.sleep(1)
         init_pwm(pin, freq, duty_cycle)
 
@@ -73,12 +78,18 @@ def init_sd():
         except KeyboardInterrupt:
             sys.exit()
 
-def init_adc(gain = 2):
+
+def init_adc(rst=19,
+            pwdn=21,
+            drdy=23,
+            start=18,
+            sck=15,
+            mosi=4,
+            miso=5):
     """Initialise the TI ADS1115 (16-bit ADC)
     TODO: Generalise pin assignment. """
-    addr = 72 # I assume the data sheet explains this
-    i2c = SoftI2C(scl=Pin(5), sda=Pin(18), freq=400000)
-    ads = ads1x15.ADS1115(i2c, addr, gain)
+    ads = ads1261evm.ADC1261(rst=rst, pwdn=pwdn, start=start, sck=sck, mosi=mosi, miso=miso, drdy = drdy)
+    
     return ads
 
 def init_write(column_names, filename = 'data.txt'):
@@ -123,7 +134,7 @@ def write(data, filename = 'data.txt'):
 
 def get_voltage(ads, channel1, channel2 = None):
     """Gets the voltage and returns it."""
-    if ads == None:
+    if ads is None:
         ads = init_adc()
     
     bits = ads.read(rate = 0, channel1 = channel1, channel2 = channel2)
@@ -198,6 +209,11 @@ def main():
     pwm = init_pwm(pin = 33, freq = 1000, duty_cycle=512)
     
     adc = init_adc()
+    adc.setup_measurements()
+    adc.set_frequency(40000, 'sinc4')
+    gain = 2 # can be adjusted
+    adc.PGA(GAIN=gain) 
+    adc.mode1(CHOP='normal', CONVRT='continuous', DELAY='50us')
 
     filename = unique_file(basename = 'data', ext = 'txt', folder = 'sd') # checks if this filename exists. If so, increment by 1 to prevent overwrite.
     filename = 'sd/' + filename
@@ -205,21 +221,54 @@ def main():
     log_file = 'log.txt' # Not used as yet. TODO: Implement logger output for debugging.
 
     # Initialise new datataking file.
-    column_names = 'Time (s), A0-A1 (mV), A2-A3 (mV) \n' # 'A2-A3 (mV)'
+    column_names = 'Time (s),AlGaN/GaN Sensor (mV),Temperature (mV)\n' # 'A2-A3 (mV)'
     init_write(column_names = column_names, filename = filename)
 
     # Start taking measurements.
-    start_time = time.time()
-    last_measurement = time.time()
+    start_time = time.time() 
+    last_measurement = utime.ticks_us()
     voltages0, voltages1 = [], []
+    total_cycle_us = 1000 
+    on_cycle_us = 500
+    
+    if on_cycle_us > total_cycle_us: on_cycle_us = total_cycle_us
+    
+    off_cycle_us = total_cycle_us - on_cycle_us
+
     while True: 
-        if (time.time() - last_measurement) < 1:
-            voltage0 = get_voltage(adc, channel1 = 0, channel2 = 1)*1000 # convert to mV
-            voltages0.append(voltage0) # Not great for micropython to have evergrowing lists. But it should be very short and prevent overflow.
-            voltage1 = get_voltage(adc, channel1 = 2, channel2 = 3)*1000 # convert to mV
-            voltages1.append(voltage1)
+        if (time.time() - start_time) < 1:
+            if (utime.ticks_us() - last_measurement) <= on_cycle_us:
+                # if in the first half, collect gan measurement
+                adc.start.on() # this repeats - how to set flag to ensure it doens't?
+                adc.choose_inputs(positive='AIN2', negative='AIN3') # how to ensure this doesn't repeat?
+                try:
+                    voltage0 = adc.collect_measurement(method = 'hardware', gain = gain)
+                    voltages0.append(voltage0)
+                except Exception as e:
+                    print(e)
+                    sys.exit(1)
+
+            elif ((utime.ticks_us() - last_measurement) <= total_cycle_us) and ((utime.ticks_us() - last_measurement) > on_cycle_us):
+                # if in second half, collect temperature measurement
+                adc.start.off()
+                adc.choose_inputs(positive='AIN6', negative='AIN7')
+                try:
+                    voltage1 = adc.collect_measurement(method = 'hardware', gain = gain)
+                    voltages1.append(voltage1)
+                except Exception as e:
+                    print(e)
+                    sys.exit(1)
+
+            elif (utime.ticks_us() - last_measurement) > total_cycle_us:
+                # after the cycle, reset
+                last_measurement = utime.ticks_us()
+            
+            else:
+                # Hard to imagine how you'd get here.
+                print("System error. Somehow outside the timed cycle bounds.")
+                sys.exit(1)
         else:
-            # This could be moved to a separate thread.
+            # calculate average
             time_since_start = str(time.time() - start_time)
             lenv0, lenv1 = len(voltages0), len(voltages1)
             
@@ -228,12 +277,18 @@ def main():
             
             average_voltages0 = str(sum(voltages0) / lenv0)
             average_voltages1 = str(sum(voltages1) / lenv1)
+            
+            print(average_voltages0, average_voltages1, lenv0, lenv1)
 
+            voltages0, voltages1 = [], []
+            
+            # write to csv
             data = str(time_since_start + ',' + average_voltages0 + ',' + average_voltages1 + '\n')
             write(data = data, filename = filename)
-            print(data)
-            last_measurement = time.time()
-            voltages0, voltages1 = [], []
+            
+            # restart
+            start_time = time.time()
+
 
 if __name__ == '__main__':
     """ To be implemented. Maybe in boot.py? """
