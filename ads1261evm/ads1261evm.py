@@ -3,6 +3,11 @@
 
 """
 import ads1261evm; adc = ads1261evm.ADC1261(); adc.setup_measurements(); adc.choose_inputs('AIN3', 'AIN4'); adc.set_frequency(1200, 'sinc1'); adc.PGA(GAIN=128); adc.mode1(CONVRT='pulse');
+
+Fastest change of inputs: 162 µs when straight to SPI.
+Fastest response (bits): 286 µs
+Fastest change input + response = 335 µs (no conversion to mV)
+Fastest response incl. Time to convert to mV: 443 µs (bit => mV take 98 µs)
 """
 
 # Testing:
@@ -12,7 +17,7 @@ import ads1261evm; adc = ads1261evm.ADC1261(); adc.setup_measurements(); adc.cho
 
 import sys
 import time
-from machine import Pin, SoftSPI
+from machine import Pin, SoftSPI, SPI
 
 
 class ADC1261:
@@ -185,9 +190,9 @@ class ADC1261:
         pwdn=21,
         drdy=23,
         start=18,
-        sck=15,
-        mosi=4,
-        miso=5,
+        sck=14,
+        mosi=13,
+        miso=12,
     ):
 
         # ESP32 using Micropython
@@ -203,15 +208,8 @@ class ADC1261:
 
         # 9.5.1 of ADS1261 datasheet (pg 50): CPOL = 0, CPHA = 1
         # MSB first: Table 12. Be wary of full-scale and offset calibration registers (need 24-bit for words)
-
-        self.spi = SoftSPI(
-            polarity=0,
-            phase=1,
-            sck=Pin(sck),
-            mosi=Pin(mosi),
-            miso=Pin(miso),
-            firstbit=SoftSPI.MSB,
-        )
+        # buadrate 80000000 doesn't work?
+        self.spi = SPI(1,polarity=0,phase=1,baudrate=8000000,bits=8,firstbit=SPI.MSB,sck=Pin(sck),mosi=Pin(mosi),miso=Pin(miso))
 
         self.bits = 24  # This is to do with future conversions (1/2**24) - not an SPI read/write issue.
 
@@ -251,7 +249,7 @@ class ADC1261:
         if CRC is None:
             read_message = hex_message + [199] + [self.zero] * 8
             returnedMessage = self.send(hex_message=read_message)
-            returnedMessage = self.send(hex_message=read_message) # sometimes the first one fails
+            returnedMessage = self.send(hex_message=read_message)  # sometimes the first one fails
             return returnedMessage[2]
             if returnedMessage[1] != int(hex_message[0], 2):
                 print("Failed readback. CRC may be on.")
@@ -367,6 +365,7 @@ class ADC1261:
         else:
             print("Failed to echo byte 1 during ID check")
             print("Register sent:", ID[1], "\nRegister received:", hex_checkID[1])
+            print("Register sent:", ID, "\nRegister received:", hex_checkID)
 
     def clear_status(self, CRCERR=0, RESET=0):
         send_status = 0
@@ -582,7 +581,8 @@ class ADC1261:
         # ~ Choose to use hardware or software polling (pg 51 & 79 of ADS1261 datasheet)
         # ~ Based on Figure 101 in ADS1261 data sheet
         i = 0
-        rdata = [0x12, 0, 0, 0, 0, 0, 0, 0, 0]
+        # rdata = [0x12, 0, 0, 0, 0, 0, 0, 0, 0]
+        read  = bytearray(5)
         # self.start1() # remove this if necessary.
         if method.lower() == "hardware":
             response = -1
@@ -591,7 +591,7 @@ class ADC1261:
                     print("Have you run start1()?")
                 try:
                     if not self.drdy.value():
-                        read = self.send(rdata)
+                        self.spi.write_readinto(b'\x12\x00\x00\x00\x00', read)
                         if status != "disabled" and crc == "disabled":
                             status_byte = self.d2b(read[2])
                             if (
