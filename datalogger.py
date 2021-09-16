@@ -14,10 +14,11 @@ adc.reset()
 adc.setup_measurements()
 adc.set_frequency(19200, 'sinc4')
 print("Frequency:", adc.check_frequency(print_freq = False))
-gain = const(2) # can be adjusted
+gain = const(1) # can be adjusted
 adc.PGA(GAIN=gain)
 adc.PGA(GAIN=gain) 
 print("Gain:", adc.check_PGA()[1])
+
 adc.mode1(CHOP='normal', CONVRT='continuous', DELAY='0us')
 print("Mode 1:", adc.check_mode1())
 wri = adc.spi.write_readinto # bound method
@@ -92,7 +93,7 @@ def init_sd():
         except OSError as e:
             print(e)
             if str(e) == 'no SD card':
-                int_state  = led_state(state=str(e))
+                int_state = led_state(state=str(e))
                 print(int_state)
                 time.sleep(2) # delay to prevent needless cycling
             elif str(e) == '[Errno 1] EPERM': # it thinks it's still mounted
@@ -228,24 +229,30 @@ def unique_file(basename, ext, folder = '/'):
 @micropython.native
 def convert_mV(rmv):
     if rmv[2] > 127:
-        return -(2**24 - ((rmv[2] << 16) + (rmv[3] << 8) + rmv[4])) * 5000/(2*2**23)
+        return -(2**24 - ((rmv[2] << 16) + (rmv[3] << 8) + rmv[4])) * 5000/(1*2**23)
     else:
-        return ((rmv[2] << 16) + (rmv[3] << 8) + rmv[4])* 5000/(2*2**23)
+        return ((rmv[2] << 16) + (rmv[3] << 8) + rmv[4])* 5000/(1*2**23)
 
 @micropython.native
 def get_measurement(_i, wri, wmv, rmv, imv):
-    # wri(_i, imv)
-    # wri(_i, imv)
+    wri(_i, imv)
+    wri(_i, imv)
     wri(wmv, rmv) # Old conversion data. Discard.
     wri(wmv, rmv) # New conversion data. Keep.
-    # wri(wmv, rmv) # New conversion data. Keep.
-    # wri(wmv, rmv) # New conversion data. Keep.
+    wri(wmv, rmv) # New conversion data. Keep.
+    wri(wmv, rmv) # New conversion data. Keep.
+    wri(wmv, rmv) # New conversion data. Keep.
+    wri(wmv, rmv) # New conversion data. Keep.
+    wri(wmv, rmv) # New conversion data. Keep.
     # return (rmv[2] << 16) + (rmv[3] << 8) + rmv[4]
     return convert_mV(rmv)
     
 def mV_temp(half, half_det, denom, br0rt, R):
-    ''' convert the mv to RTD '''
-    return half + math.sqrt(half_det + br0rt*R)/denom
+    ''' convert the mV to RTD '''
+    try:
+        return half + math.sqrt(half_det + br0rt*R)/denom
+    except Exception as e:
+        return 0
 
 def input_bytes(adc, positive, negative):
     ''' Takes an ADC object, positive terminal, and negative terminal.
@@ -261,13 +268,15 @@ def measure(filename, adc = init_adc()):
     adc.setup_measurements()
     adc.set_frequency(19200, 'sinc4')
     print("Frequency:", adc.check_frequency(print_freq = False))
-    gain = const(2) # can be adjusted but must update convert_mV
+    gain = const(1) # can be adjusted but must update convert_mV
     adc.PGA(GAIN=gain)
     adc.PGA(GAIN=gain) 
     print("Gain:", adc.check_PGA()[1])
     # adc.mode1(CHOP='normal', CONVRT='continuous', DELAY='0us')
     adc.mode1()
     print("Mode 1:", adc.check_mode1())
+    adc.reference_config(reference_enable=1, RMUXP="AVDD", RMUXN="AVSS")
+    print("Reference", adc.check_reference_config())
     
     wri = adc.spi.write_readinto # bound method
 
@@ -303,13 +312,13 @@ def measure(filename, adc = init_adc()):
     reference = const(5000)
     max_bits = const(2**23)
     factor = reference/(max_bits * gain)
-    switch_current = Pin(22, Pin.OUT)
+    switch_current = Pin(32, Pin.OUT)
     fc = switch_current.on
     rc = switch_current.off
 
     desired_frequency = 1000  # Hz
     # delay = (1/desired_frequency*1e6 - 700)/2 # (seconds/period - average iteration time) / 2, 650 = 827/0.93 Hz
-    delay = 165
+    delay = 50
     delay = int(delay)
     print(delay)
     flag = True
@@ -319,6 +328,11 @@ def measure(filename, adc = init_adc()):
     a, b, R0 = 3.9083e-3, -5.775e-7, 1000
     half, half_det, denom, br0rt = -a*R0/(2*b*R0), (a*R0)**2 - 4*b*R0**2, 2*b*R0, 4*b*R0
     t = mV_temp
+    
+    print(adc.check_inputs())
+    print(adc.check_PGA())
+    print(adc.check_frequency())
+
     while True: 
         try:
             while (time.time() - start_time) < 0.93: # takes 60 ms to write to SD card
@@ -328,12 +342,16 @@ def measure(filename, adc = init_adc()):
                 i += 1 # place here to reduce switch noise
                 v0 += get_measurement(_i=i1, wri=wri, wmv=wmv, rmv=r1mv, imv=imv)
                 wri(i2, imv) # 160 µs? Pass along to something else?
+                wri(i2, imv) # 160 µs? Pass along to something else?
+                # print(adc.check_inputs())
                 utime.sleep_us(delay)
                 
                 rc() # reverse current
                 # if in second half, collect temperature measurement
                 v1 += get_measurement(_i=i2, wri=wri, wmv=wmv, rmv=r2mv, imv=imv)
                 wri(i1, imv) # 160 µs? Pass along to something else?
+                wri(i1, imv) # 160 µs? Pass along to something else?
+                # print(adc.check_inputs())
                 utime.sleep_us(delay)
 
             if flag:
@@ -347,8 +365,9 @@ def measure(filename, adc = init_adc()):
             time_since_start = str(time.time() - global_start)
             
             average_voltages0 = str(v0 / i) # removed factor
-            temp = t(half, half_det, denom, br0rt, 10*v1/i) # 10 = mV/100e-6, change to 5 for 200 µA supply.
-            average_voltages1 = str(temp) # removed factor
+            # temp = t(half, half_det, denom, br0rt, 10*v1/i) # 10 = mV/100e-6, change to 5 for 200 µA supply.
+            # average_voltages1 = str(temp) # removed factor
+            average_voltages1 = str(v1 / i) # removed factor
             
             print('\n', time_since_start, average_voltages0, average_voltages1, i, v0, v1)
             v0, v1, i = 0, 0, 0
@@ -372,6 +391,7 @@ def measure(filename, adc = init_adc()):
             print(e)
 
         except Exception as e:
+            print(e)
             led_state('adc')
 
 def main():

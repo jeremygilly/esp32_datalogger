@@ -2,7 +2,9 @@
 # ADS1261EVM User Guide: www.ti.com/lit/ug/sbau293a/sbau293a.pdf
 
 """
-import ads1261evm; adc = ads1261evm.ADC1261(); adc.setup_measurements(); adc.choose_inputs('AIN3', 'AIN4'); adc.set_frequency(1200, 'sinc1'); adc.PGA(GAIN=128); adc.mode1(CONVRT='pulse');
+import ads1261evm; adc = ads1261evm.ADC1261(); adc.setup_measurements(); 
+adc.choose_inputs('AIN3', 'AIN4'); adc.set_frequency(1200, 'sinc1'); 
+adc.PGA(GAIN=1); adc.mode1(CONVRT='pulse');
 
 Fastest change of inputs: 162 µs when straight to SPI.
 Fastest response (bits): 286 µs
@@ -186,13 +188,13 @@ class ADC1261:
         bus=0,
         device=0,
         speed=16000000,
-        rst=19,
-        pwdn=21,
-        drdy=23,
-        start=18,
-        sck=14,
-        mosi=13,
-        miso=12,
+        rst=19,     # RST
+        pwdn=21,    # PWDN
+        drdy=23,    # DRDY
+        start=18,   # STR
+        sck=14,     # SCLK
+        mosi=13,    # DIN
+        miso=12,    # DOUT
     ):
 
         # ESP32 using Micropython
