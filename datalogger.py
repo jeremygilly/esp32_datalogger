@@ -22,7 +22,7 @@ class Logger:
     def getLogger(self, name):
         return Logger()
 
-def init_pwm(pin = 33, freq = 1000, duty_cycle = 512):
+def init_pwm(pin = 32, freq = 1000, duty_cycle = 512):
     # Run Square Wave Generator
     try:
         pwm = PWM(Pin(pin))
@@ -42,8 +42,8 @@ def init_sd():
     sd = None
     while sd is None:
         try:
-            spisd = SoftSPI(-1, miso = Pin(13), mosi = Pin(26), sck = Pin(14))
-            sd = SDCard(spisd, Pin(27))
+            spisd = SoftSPI(-1, miso = Pin(27), mosi = Pin(25), sck = Pin(26))
+            sd = SDCard(spisd, Pin(33)) # cs
             
             vfs = os.VfsFat(sd)
             os.mount(vfs, '/sd') # can't mount something that's already been mounted - will trigger EPERM error
@@ -59,6 +59,15 @@ def init_sd():
             elif str(e) == '[Errno 1] EPERM': # it thinks it's still mounted
                 """This will also be triggered if accidentally re-mounting even if there's been no 
                 change in SD card connection. Bug?"""
+                print('Unmounting SD card.')
+                os.umount('/sd')
+                int_state  = led_state(state = 'no SD card')
+                print(int_state)
+                time.sleep(2) # delay to prevent needless cycling
+                print('Re-initialising SD...')
+            elif str(e) =='[Errno 5] EIO':
+                """Not sure what EIO means?"""
+                print(e)
                 print('Unmounting SD card.')
                 os.umount('/sd')
                 int_state  = led_state(state = 'no SD card')
@@ -184,7 +193,9 @@ def check_filename(filename, folder = '/'):
     return recursion_filename(filename, i = 0, dirs = os.listdir(folder))
 
 def unique_file(basename, ext, folder = '/'):
+    
     actualname = "%s.%s" % (basename, ext)
+    print(actualname)
     i = 0
     while actualname in os.listdir(folder):
         i += 1
