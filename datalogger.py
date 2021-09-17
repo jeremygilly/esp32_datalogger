@@ -22,7 +22,7 @@ class Logger:
     def getLogger(self, name):
         return Logger()
 
-def init_pwm(pin = 32, freq = 1000, duty_cycle = 512):
+def init_pwm(pin = 33, freq = 1000, duty_cycle = 512):
     # Run Square Wave Generator
     try:
         pwm = PWM(Pin(pin))
@@ -55,6 +55,7 @@ def init_sd():
             if str(e) == 'no SD card':
                 int_state  = led_state(state = str(e))
                 print(int_state)
+                print(e)
                 time.sleep(2) # delay to prevent needless cycling
             elif str(e) == '[Errno 1] EPERM': # it thinks it's still mounted
                 """This will also be triggered if accidentally re-mounting even if there's been no 
@@ -65,8 +66,9 @@ def init_sd():
                 print(int_state)
                 time.sleep(2) # delay to prevent needless cycling
                 print('Re-initialising SD...')
-            elif str(e) =='[Errno 5] EIO':
+            elif str(e) =='[Errno 5] EIO': # input/output error?
                 """Not sure what EIO means?"""
+                print('Error - input/output')
                 print(e)
                 print('Unmounting SD card.')
                 os.umount('/sd')
@@ -152,7 +154,7 @@ def led_state(state = 'other', pins = [15, 2, 4]):
     100 (4): 'adc' - ADC Error.
     101 (5): Not used.
     110 (6): 'mnfe' - Module Not Found Error. Check the imports.
-    111 (7): 'other' - Other error or state not set.
+    111 (7): 'on' - Other error or state not set.
     
     TODO: Generalise pin assignment.
     """
@@ -197,16 +199,20 @@ def unique_file(basename, ext, folder = '/'):
     actualname = "%s.%s" % (basename, ext)
     print(actualname)
     i = 0
-    while actualname in os.listdir(folder):
-        i += 1
-        actualname = "%s%d.%s" % (basename, i, ext)
-    return actualname
-
+    try:
+        while actualname in os.listdir(folder):
+            i += 1
+            actualname = "%s%d.%s" % (basename, i, ext)
+        return actualname
+    except OSError as e:
+        if str(e) == '[Errno 5] EIO':
+            main() # reboot program on error with filename
 def main():
+    sd = None
     sd = init_sd()
     if sd is None: main()
     int_state = led_state(state = 'ok', pins = [15, 2, 4])
-    pwm = init_pwm(pin = 33, freq = 1000, duty_cycle=512)
+    pwm = init_pwm(pin = 32, freq = 1000, duty_cycle=512)
     
     adc = init_adc()
 
@@ -244,6 +250,7 @@ def main():
             write(data = data, filename = filename)
             print(data)
             last_measurement = time.time()
+            led_state('other')
             voltages0, voltages1 = [], []
 
 if __name__ == '__main__':
