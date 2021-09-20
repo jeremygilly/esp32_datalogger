@@ -3,6 +3,13 @@
 In case you want to run this from the REPL:
 import datalogger; datalogger.main()
 
+if stuck in main loop:
+    esptool.py --chip esp32 --port /dev/tty.usbserial-0001 --baud 115200 erase_flash
+    esptool.py --chip esp32 --port /dev/tty.usbserial-0001 --baud 115200 write_flash 0x1000 /Users/Jeremy/Documents/ESP32/saved_binaries/esp32-20210623-v1.16.bin
+    ampy --port /dev/tty.usbserial-0001 --baud 115200 put sdcard/sdcard.py
+    ampy --port /dev/tty.usbserial-0001 --baud 115200 put ads1x15/ads1x15.py
+    ampy --port /dev/tty.usbserial-0001 --baud 115200 put datalogger.py
+    ampy --port /dev/tty.usbserial-0001 --baud 115200 put main.py
 Not yet implemented: WiFi removal of data.
 """
 
@@ -84,7 +91,7 @@ def init_sd():
         except KeyboardInterrupt:
             sys.exit()
 
-def init_adc(gain = 2):
+def init_adc(gain = 4):
     """Initialise the TI ADS1115 (16-bit ADC)
     TODO: Generalise pin assignment. """
     addr = 72 # I assume the data sheet explains this
